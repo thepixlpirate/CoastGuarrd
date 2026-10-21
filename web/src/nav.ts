@@ -1,20 +1,10 @@
-import {
-  Activity,
-  Clock,
-  Flag,
-  Inbox,
-  LayoutDashboard,
-  ListChecks,
-  Map,
-  Settings,
-  Trash2,
-  Users,
-  type LucideIcon,
-} from 'lucide-react';
+import { Activity, Clock, Flag, Inbox, LayoutDashboard, ListChecks, Map, Settings, ShieldAlert, Trash2, Users, type LucideIcon } from 'lucide-react';
 
 export interface NavItem {
   to: string;
   label: string;
+  /** Shorter label for the phone's bottom bar. */
+  short?: string;
   icon: LucideIcon;
   section: 'Watch' | 'Cleanup' | 'System';
   /** Shown in the phone's bottom bar. */
@@ -23,56 +13,18 @@ export interface NavItem {
   phase?: number;
   blurb?: string;
   coming?: string[];
+  /** Shows the open-alert count. */
+  alerts?: boolean;
 }
 
 export const navItems: NavItem[] = [
-  { to: '/', label: 'Dashboard', icon: LayoutDashboard, section: 'Watch', mobile: true },
-  {
-    to: '/activity',
-    label: 'Live Activity',
-    icon: Activity,
-    section: 'Watch',
-    mobile: true,
-    phase: 2,
-    blurb: 'Everything playing right now, as it happens.',
-    coming: ['Live streams with progress, quality and transcode details', 'Device, app and network for each stream', 'Stop a stream with a message'],
-  },
-  {
-    to: '/history',
-    label: 'History',
-    icon: Clock,
-    section: 'Watch',
-    phase: 2,
-    blurb: 'Every play, by every person, searchable.',
-    coming: ['Full watch history with filters', 'How long each title was watched', 'Import past history from Jellyfin'],
-  },
-  {
-    to: '/users',
-    label: 'Users',
-    icon: Users,
-    section: 'Watch',
-    phase: 2,
-    blurb: 'A profile for each family member.',
-    coming: ['Sign-in dates and times, devices and apps', 'Watch stats and favourite titles', 'Account sharing and multi-device alerts'],
-  },
-  {
-    to: '/map',
-    label: 'Map',
-    icon: Map,
-    section: 'Watch',
-    phase: 2,
-    blurb: 'Where streams are coming from.',
-    coming: ['Map of stream locations', 'Alerts for far-apart sign-ins ("impossible travel")', 'Offline location lookup — nothing sent to outside services'],
-  },
-  {
-    to: '/requests',
-    label: 'Requests',
-    icon: Inbox,
-    section: 'Watch',
-    phase: 2,
-    blurb: 'Who asked for what — and whether they watched it.',
-    coming: ['Every Seerr request with requester and date', 'Requested-but-never-watched report'],
-  },
+  { to: '/', label: 'Dashboard', short: 'Home', icon: LayoutDashboard, section: 'Watch', mobile: true },
+  { to: '/activity', label: 'Live Activity', short: 'Live', icon: Activity, section: 'Watch', mobile: true },
+  { to: '/history', label: 'History', icon: Clock, section: 'Watch', mobile: true },
+  { to: '/users', label: 'Users', icon: Users, section: 'Watch', mobile: true },
+  { to: '/map', label: 'Map', icon: Map, section: 'Watch' },
+  { to: '/requests', label: 'Requests', icon: Inbox, section: 'Watch' },
+  { to: '/alerts', label: 'Alerts', icon: ShieldAlert, section: 'Watch', alerts: true },
   {
     to: '/rules',
     label: 'Rules',
@@ -87,7 +39,6 @@ export const navItems: NavItem[] = [
     label: 'Leaving Soon',
     icon: Flag,
     section: 'Cleanup',
-    mobile: true,
     phase: 3,
     blurb: 'Flagged titles and their countdowns.',
     coming: ['Countdown poster banners', '"Leaving Soon" collection in Jellyfin', 'Keep requests from family'],

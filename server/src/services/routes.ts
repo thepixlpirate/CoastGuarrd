@@ -4,6 +4,7 @@ import { services } from './definitions.js';
 import { getService, isServiceId, listServices, recordServiceHealth, saveService } from './store.js';
 import { audit } from '../lib/audit.js';
 import { clientIp } from '../lib/ip.js';
+import { syncAllNow } from '../tracking/sync.js';
 
 const urlSchema = z
   .string()
@@ -47,6 +48,10 @@ export async function serviceRoutes(app: FastifyInstance) {
     if (patch.apiKey === '') delete patch.apiKey; // blank means "keep the saved key"
     saveService(id, patch);
     audit('service.updated', { userId: req.user!.id, ip: clientIp(req), detail: { id, enabled: patch.enabled, url: patch.url, keyChanged: !!patch.apiKey } });
+    // Pull users, sign-ins and requests straight away so pages fill in quickly.
+    if ((id === 'jellyfin' || id === 'seerr') && getService(id).enabled) {
+      void syncAllNow({ info: (m) => req.log.info(m), warn: (m) => req.log.warn(m), error: (m) => req.log.error(m) });
+    }
     return publicView(id);
   });
 

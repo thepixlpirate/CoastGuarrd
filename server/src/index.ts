@@ -13,6 +13,10 @@ import { serviceRoutes } from './services/routes.js';
 import { storageRoutes } from './storage/routes.js';
 import { services } from './services/definitions.js';
 import { listServices, recordServiceHealth } from './services/store.js';
+import { trackingRoutes } from './routes/tracking.js';
+import { initGeo } from './geo/index.js';
+import { startPoller } from './tracking/poller.js';
+import { startSync } from './tracking/sync.js';
 
 openDb();
 
@@ -64,6 +68,7 @@ await app.register(authRoutes);
 await app.register(accountRoutes);
 await app.register(serviceRoutes);
 await app.register(storageRoutes);
+await app.register(trackingRoutes);
 
 app.setErrorHandler((err: Error & { statusCode?: number }, req, reply) => {
   req.log.error(err);
@@ -125,4 +130,14 @@ process.on('SIGTERM', shutdown);
 process.on('SIGINT', shutdown);
 
 await app.listen({ port: config.port, host: config.host });
+
+// ---- Tracking -------------------------------------------------------------
+const bgLog = {
+  info: (m: string) => app.log.info(m),
+  warn: (m: string) => app.log.warn(m),
+  error: (m: unknown) => app.log.error(m),
+};
+void initGeo((m) => app.log.info(m));
+startPoller(bgLog);
+startSync(bgLog);
 app.log.info(`CoastGuarrd ${config.version} is up on port ${config.port}`);

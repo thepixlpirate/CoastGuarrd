@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Route, Routes } from 'react-router-dom';
-import { FolderSync, Loader2, PlugZap, Shield, SlidersHorizontal } from 'lucide-react';
+import { FolderSync, Loader2, PlugZap, Radar, Shield, SlidersHorizontal } from 'lucide-react';
+import TrackingSettings from '../components/TrackingSettings';
 import { get, put, type GeneralSettings, type ServiceView } from '../api';
 import ServiceEditor from '../components/ServiceEditor';
 import LibraryFolders from '../components/LibraryFolders';
@@ -105,18 +106,20 @@ export default function Settings() {
       <div className="page-head">
         <div>
           <h1>Settings</h1>
-          <p>Connections, folders, security and general options.</p>
+          <p>Connections, folders, tracking, security and general options.</p>
         </div>
       </div>
       <div className="tabs">
         <NavLink to="/settings" end><PlugZap /> Connections</NavLink>
         <NavLink to="/settings/library"><FolderSync /> Folders & recycle bins</NavLink>
+        <NavLink to="/settings/tracking"><Radar /> Tracking & alerts</NavLink>
         <NavLink to="/settings/security"><Shield /> Security</NavLink>
         <NavLink to="/settings/general"><SlidersHorizontal /> General</NavLink>
       </div>
       <Routes>
         <Route index element={<Connections />} />
         <Route path="library" element={<LibraryFolders />} />
+        <Route path="tracking" element={<TrackingSettings />} />
         <Route path="security" element={<Security />} />
         <Route path="general" element={<General />} />
       </Routes>

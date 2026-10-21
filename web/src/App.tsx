@@ -8,6 +8,13 @@ import Shell from './components/Shell';
 import Dashboard from './pages/Dashboard';
 import Settings from './pages/Settings';
 import ComingSoon from './pages/ComingSoon';
+import Live from './pages/Live';
+import History from './pages/History';
+import Users from './pages/Users';
+import UserDetail from './pages/UserDetail';
+import MapPage from './pages/MapPage';
+import Requests from './pages/Requests';
+import Alerts from './pages/Alerts';
 import { navItems } from './nav';
 
 export default function App() {
@@ -29,6 +36,13 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/settings/*" element={<Settings />} />
+        <Route path="/activity" element={<Live />} />
+        <Route path="/history" element={<History />} />
+        <Route path="/users" element={<Users />} />
+        <Route path="/users/:id" element={<UserDetail />} />
+        <Route path="/map" element={<MapPage />} />
+        <Route path="/requests" element={<Requests />} />
+        <Route path="/alerts" element={<Alerts />} />
         {navItems
           .filter((n) => n.phase)
           .map((n) => (

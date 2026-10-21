@@ -2,9 +2,26 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { LogOut, Menu } from 'lucide-react';
 import { useAuth } from '../auth';
+import { get } from '../api';
 import { navItems, type NavItem } from '../nav';
 
-function NavList({ onPick }: { onPick?: () => void }) {
+/** Number of open alerts, refreshed every 30 seconds and whenever alerts change. */
+function useOpenAlerts() {
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    const load = () => get<{ counts: { open: number } }>('/api/alerts?status=open&pageSize=10').then((r) => setN(r.counts.open)).catch(() => undefined);
+    void load();
+    const t = setInterval(load, 30_000);
+    window.addEventListener('cg:alerts-changed', load);
+    return () => {
+      clearInterval(t);
+      window.removeEventListener('cg:alerts-changed', load);
+    };
+  }, []);
+  return n;
+}
+
+function NavList({ onPick, alertCount = 0 }: { onPick?: () => void; alertCount?: number }) {
   const sections: NavItem['section'][] = ['Watch', 'Cleanup', 'System'];
   return (
     <nav className="nav">
@@ -18,6 +35,7 @@ function NavList({ onPick }: { onPick?: () => void }) {
                 <n.icon />
                 {n.label}
                 {n.phase && <span className="badge soon">Soon</span>}
+                {n.alerts && alertCount > 0 && <span className="count">{alertCount > 99 ? '99+' : alertCount}</span>}
               </NavLink>
             ))}
         </div>
@@ -40,6 +58,7 @@ export default function Shell({ children }: { children: ReactNode }) {
   const [sheet, setSheet] = useState(false);
   const location = useLocation();
   const username = status?.user?.username ?? '';
+  const alertCount = useOpenAlerts();
 
   useEffect(() => {
     setSheet(false);
@@ -53,7 +72,7 @@ export default function Shell({ children }: { children: ReactNode }) {
     <div className="shell backdrop">
       <aside className="sidebar">
         <Brand />
-        <NavList />
+        <NavList alertCount={alertCount} />
         <div className="sidebar-foot">
           <div className="avatar">{username.slice(0, 1).toUpperCase()}</div>
           <div style={{ minWidth: 0, flex: 1 }}>
@@ -81,12 +100,13 @@ export default function Shell({ children }: { children: ReactNode }) {
         {mobileItems.map((n) => (
           <NavLink key={n.to} to={n.to} end={n.to === '/'}>
             <n.icon />
-            {n.label.replace('Live ', '')}
+            {n.short ?? n.label}
           </NavLink>
         ))}
         <button className={moreActive ? 'active' : ''} onClick={() => setSheet(true)}>
           <Menu />
           More
+          {alertCount > 0 && <span className="count-dot" aria-label={`${alertCount} open alerts`} />}
         </button>
       </nav>
 
@@ -95,7 +115,7 @@ export default function Shell({ children }: { children: ReactNode }) {
           <div className="sheet-back" onClick={() => setSheet(false)} />
           <div className="sheet" role="dialog" aria-label="All pages">
             <div className="grabber" />
-            <NavList onPick={() => setSheet(false)} />
+            <NavList onPick={() => setSheet(false)} alertCount={alertCount} />
           </div>
         </>
       )}

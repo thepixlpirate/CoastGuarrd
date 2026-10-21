@@ -20,7 +20,16 @@ CoastGuarrd keeps an eye on who watches what on your Jellyfin server, and helps 
 - **Secure by default** — encrypted database, two-factor sign-in, lockout after repeated failures, and correct visitor addresses behind Cloudflare tunnels.
 - **Phone friendly** — the whole interface works on desktop and mobile.
 
-> **Status:** early development. Phase 1 (sign-in, setup, connections, folders & recycle bins) is done. Watch tracking, rules, posters, the recycle bin and notifications arrive in the next phases.
+> **Status:** early development. Phase 1 (sign-in, setup, connections, folders & recycle bins) and phase 2 (watch tracking, history, users, map, requests and alerts) are done. Cleanup rules, poster banners, the recycle bin and notifications arrive in the next phases.
+
+## What it tracks
+
+- **Live activity** — every stream with progress, quality, direct play vs transcode (and why), device, app, address and location. Send a message to a stream or stop it.
+- **History** — every play: when it started and stopped, how long was actually watched, pauses, device and place. Older history can be imported from Jellyfin (full history if the *Playback Reporting* plugin is installed).
+- **Users** — a profile for each person: sign-in dates and times, every device and address they've used, a map of where they watch, when they watch (day × hour), favourite titles, apps, requests and alerts. Add private notes and a per-person stream limit.
+- **Map** — where people watch and sign in from, plus who's watching right now.
+- **Requests** — every Seerr request, who asked, and whether they ever watched it.
+- **Alerts** — impossible travel, streaming from two places at once, too many streams, lots of different addresses, new devices, new countries and repeated failed Jellyfin sign-ins. Each person gets a trust score.
 
 ## Install on Unraid
 
@@ -70,6 +79,14 @@ Before moving a title, CoastGuarrd tells Radarr/Sonarr/Lidarr to stop monitoring
 | `TZ` | — | Your time zone. |
 
 **About the encryption key:** if you let CoastGuarrd generate the key, it's stored next to the database in `/config`. That protects copies of the database file on their own (backups, for example), but anyone with your whole appdata folder has both. For stronger protection set `CG_DB_KEY` yourself and keep it somewhere safe — the database can't be opened without it.
+
+## Locations
+
+Addresses are turned into approximate (city-level) locations **on your server** using the free [DB-IP](https://db-ip.com) "IP to City Lite" database (CC BY 4.0), downloaded automatically each month. No addresses are ever sent to an outside service. To use MaxMind instead, put `GeoLite2-City.mmdb` in `/config/geoip/` and restart.
+
+The map's background tiles come from CARTO / OpenStreetMap.
+
+**If everyone shows up as "Local network":** Jellyfin is probably seeing your tunnel or reverse proxy instead of the real visitor. In Jellyfin go to **Dashboard → Networking** and add the tunnel/proxy's address under **Known proxies**.
 
 ## Behind a Cloudflare tunnel or reverse proxy
 
