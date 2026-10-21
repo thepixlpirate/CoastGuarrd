@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>CoastGuarrd</Name>
+  <Repository>ghcr.io/thepixlpirate/coastguarrd:latest</Repository>
+  <Registry>https://github.com/thepixlpirate/CoastGuarrd/pkgs/container/coastguarrd</Registry>
+  <Network>bridge</Network>
+  <Shell>sh</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/thepixlpirate/CoastGuarrd/issues</Support>
+  <Project>https://github.com/thepixlpirate/CoastGuarrd</Project>
+  <Overview>Watch tracking and safe library cleanup for Jellyfin, Seerr, Radarr, Sonarr and Lidarr. Tracks who watches what, where and on which devices, flags titles nobody watches, and moves them to a recycle bin that only you can empty. Nothing is ever deleted automatically.</Overview>
+  <Category>MediaServer:Other Tools:</Category>
+  <WebUI>http://[IP]:[PORT:8787]/</WebUI>
+  <Icon>https://raw.githubusercontent.com/thepixlpirate/CoastGuarrd/main/web/public/icon-512.png</Icon>
+  <ExtraParams>--restart unless-stopped</ExtraParams>
+  <Config Name="Web UI port" Target="8787" Default="8787" Mode="tcp" Description="Port for the CoastGuarrd web interface." Type="Port" Display="always" Required="true" Mask="false">8787</Config>
+  <Config Name="App data" Target="/config" Default="/mnt/user/appdata/coastguarrd" Mode="rw" Description="Holds the encrypted database, its key file and poster backups." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/coastguarrd</Config>
+  <Config Name="Media" Target="/media" Default="/mnt/user/" Mode="rw,slave" Description="The folder that contains ALL your media (and where recycle bins will be created). For Unassigned Devices drives use /mnt/disks/. The rw,slave mode lets the container see drives that are mounted after it starts." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/</Config>
+  <Config Name="PUID" Target="PUID" Default="99" Mode="" Description="User ID files are created as (99 = nobody on Unraid)." Type="Variable" Display="advanced" Required="false" Mask="false">99</Config>
+  <Config Name="PGID" Target="PGID" Default="100" Mode="" Description="Group ID files are created as (100 = users on Unraid)." Type="Variable" Display="advanced" Required="false" Mask="false">100</Config>
+  <Config Name="Time zone" Target="TZ" Default="" Mode="" Description="Your time zone, e.g. America/New_York. Used for watch times." Type="Variable" Display="always" Required="false" Mask="false"></Config>
+  <Config Name="Database key (optional)" Target="CG_DB_KEY" Default="" Mode="" Description="Optional. If left blank, a random key is created and stored in App data. If you set one, keep it safe — the database cannot be opened without it." Type="Variable" Display="advanced" Required="false" Mask="true"></Config>
+</Container>
