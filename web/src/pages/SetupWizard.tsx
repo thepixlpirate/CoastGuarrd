@@ -37,7 +37,7 @@ export default function SetupWizard() {
     <div className="backdrop" style={{ minHeight: '100%' }}>
       <div className="wizard">
         <div className="wizard-top">
-          <img src="/logo.svg" alt="" />
+          <img src="/logo.png" alt="" />
           <div style={{ flex: 1 }}>
             <div className="grad-text" style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 21 }}>CoastGuarrd</div>
             <div className="faint small">Setup · step {step + 1} of {STEPS.length} — {STEPS[step]}</div>

@@ -526,8 +526,8 @@ code,
   margin-bottom: 26px;
 }
 .auth-logo img {
-  width: 92px;
-  height: 92px;
+  width: 120px;
+  height: 120px;
   filter: drop-shadow(0 8px 24px rgba(139, 92, 246, 0.35));
 }
 .auth-logo .wordmark {
@@ -624,8 +624,8 @@ code,
   text-decoration: none;
 }
 .brand img {
-  width: 36px;
-  height: 36px;
+  width: 42px;
+  height: 42px;
 }
 .brand span {
   font-family: var(--font-display);

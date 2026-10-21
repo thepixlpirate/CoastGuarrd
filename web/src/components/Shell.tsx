@@ -29,7 +29,7 @@ function NavList({ onPick }: { onPick?: () => void }) {
 function Brand() {
   return (
     <Link to="/" className="brand">
-      <img src="/logo.svg" alt="" />
+      <img src="/logo.png" alt="" />
       <span className="grad-text">CoastGuarrd</span>
     </Link>
   );
