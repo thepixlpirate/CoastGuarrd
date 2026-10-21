@@ -2,7 +2,7 @@
 FROM node:22-bookworm-slim AS web
 WORKDIR /src/web
 COPY web/package.json web/package-lock.json ./
-RUN npm ci --no-audit --no-fund
+RUN npm ci --no-audit --no-fund --loglevel=warn
 COPY web/ ./
 RUN npm run build
 
@@ -10,7 +10,9 @@ RUN npm run build
 FROM node:22-bookworm-slim AS server
 WORKDIR /src/server
 COPY server/package.json server/package-lock.json ./
-RUN npm ci --no-audit --no-fund
+# The encrypted-database add-on ships ready-made binaries, so nothing needs compiling.
+RUN npm ci --no-audit --no-fund --ignore-scripts \
+ && node -e "require('better-sqlite3-multiple-ciphers')(':memory:').prepare('select 1').get()"
 COPY server/ ./
 RUN npm run build && npm prune --omit=dev
 
