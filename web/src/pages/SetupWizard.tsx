@@ -23,7 +23,9 @@ export default function SetupWizard() {
     get<GeneralSettings>('/api/settings/general').then(setGeneral).catch(() => undefined);
   }, []);
 
-  useEffect(() => window.scrollTo(0, 0), [step]);
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [step]);
 
   const jellyfinOk = !!svcs?.find((s) => s.id === 'jellyfin' && s.enabled && s.lastOkAt && !s.lastError);
 
