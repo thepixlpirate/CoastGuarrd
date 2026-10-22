@@ -61,3 +61,15 @@ export function plural(n: number, word: string, many = `${word}s`) {
 
 export const HOUR_LABELS = Array.from({ length: 24 }, (_, h) => (h === 0 ? '12a' : h < 12 ? `${h}a` : h === 12 ? '12p' : `${h - 12}p`));
 export const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+export function fmtBytes(b: number | null | undefined): string {
+  if (b == null) return '—';
+  if (b < 1024 ** 2) return `${Math.round(b / 1024)} KB`;
+  if (b < 1024 ** 3) return `${Math.round(b / 1024 ** 2)} MB`;
+  if (b < 1024 ** 4) return `${(b / 1024 ** 3).toFixed(b < 10 * 1024 ** 3 ? 1 : 0)} GB`;
+  return `${(b / 1024 ** 4).toFixed(2)} TB`;
+}
+
+export function daysText(n: number): string {
+  return n <= 0 ? 'today' : n === 1 ? '1 day' : `${n} days`;
+}

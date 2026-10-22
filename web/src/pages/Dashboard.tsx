@@ -19,6 +19,7 @@ function greeting() {
 export default function Dashboard() {
   const { status } = useAuth();
   const { data } = usePoll<Overview>('/api/stats/overview', 20_000);
+  const { data: cleanup } = usePoll<{ counts: { items: number; flagged: number; inBin: number; keepRequests: number } }>('/api/cleanup/status', 60_000);
   const [svcs, setSvcs] = useState<ServiceView[]>([]);
   const [general, setGeneral] = useState<GeneralSettings | null>(null);
 
@@ -180,6 +181,19 @@ export default function Dashboard() {
               {data.recent.length === 0 ? <div className="faint small" style={{ padding: '0 14px' }}>Nothing yet.</div> : <PlayList plays={data.recent} compact />}
             </div>
             <div className="stack" style={{ gap: 16, alignContent: 'start' }}>
+              {cleanup && (
+                <div className="card">
+                  <div className="card-head">
+                    <h3 style={{ flex: 1 }}>Cleanup</h3>
+                    <Link to="/leaving" className="small row" style={{ gap: 4 }}>Leaving Soon <ArrowRight size={14} /></Link>
+                  </div>
+                  <div className="grid grid-3" style={{ gap: 10, gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
+                    <Link to="/leaving" style={{ color: 'inherit' }}><div className="faint small">Leaving</div><div className="stat" style={{ fontSize: 24 }}>{cleanup.counts.flagged}</div></Link>
+                    <Link to="/recycle" style={{ color: 'inherit' }}><div className="faint small">In recycle bin</div><div className="stat" style={{ fontSize: 24 }}>{cleanup.counts.inBin}</div></Link>
+                    <Link to="/leaving" style={{ color: 'inherit' }}><div className="faint small">Keep requests</div><div className="stat" style={{ fontSize: 24, color: cleanup.counts.keepRequests ? 'var(--teal-strong)' : undefined }}>{cleanup.counts.keepRequests}</div></Link>
+                  </div>
+                </div>
+              )}
               <div className="card">
                 <div className="card-head">
                   <h3 style={{ flex: 1 }}>Latest alerts</h3>

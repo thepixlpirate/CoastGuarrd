@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from './auth';
 import Login from './pages/Login';
@@ -7,7 +7,10 @@ import SetupWizard from './pages/SetupWizard';
 import Shell from './components/Shell';
 import Dashboard from './pages/Dashboard';
 import Settings from './pages/Settings';
-import ComingSoon from './pages/ComingSoon';
+import Rules from './pages/Rules';
+import Leaving from './pages/Leaving';
+import RecycleBin from './pages/RecycleBin';
+import PublicLeaving from './pages/PublicLeaving';
 import Live from './pages/Live';
 import History from './pages/History';
 import Users from './pages/Users';
@@ -15,10 +18,14 @@ import UserDetail from './pages/UserDetail';
 import MapPage from './pages/MapPage';
 import Requests from './pages/Requests';
 import Alerts from './pages/Alerts';
-import { navItems } from './nav';
 
 export default function App() {
   const { status } = useAuth();
+  const location = useLocation();
+
+  // The family page works without signing in.
+  const pub = location.pathname.match(/^\/public\/leaving\/([^/]+)/);
+  if (pub) return <PublicLeaving token={decodeURIComponent(pub[1])} />;
 
   if (!status) {
     return (
@@ -43,11 +50,9 @@ export default function App() {
         <Route path="/map" element={<MapPage />} />
         <Route path="/requests" element={<Requests />} />
         <Route path="/alerts" element={<Alerts />} />
-        {navItems
-          .filter((n) => n.phase)
-          .map((n) => (
-            <Route key={n.to} path={n.to} element={<ComingSoon item={n} />} />
-          ))}
+        <Route path="/rules" element={<Rules />} />
+        <Route path="/leaving" element={<Leaving />} />
+        <Route path="/recycle" element={<RecycleBin />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Shell>

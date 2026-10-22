@@ -12,7 +12,7 @@ WORKDIR /src/server
 COPY server/package.json server/package-lock.json ./
 # The encrypted-database add-on ships ready-made binaries, so nothing needs compiling.
 RUN npm ci --no-audit --no-fund --ignore-scripts \
- && node -e "require('better-sqlite3-multiple-ciphers')(':memory:').prepare('select 1').get()"
+ && node -e "require('better-sqlite3-multiple-ciphers')(':memory:').prepare('select 1').get(); require('sharp')"
 COPY server/ ./
 RUN npm run build && npm prune --omit=dev
 
@@ -37,6 +37,7 @@ WORKDIR /app
 COPY --from=server /src/server/node_modules ./node_modules
 COPY --from=server /src/server/dist ./dist
 COPY --from=server /src/server/package.json ./package.json
+COPY --from=server /src/server/assets ./assets
 COPY --from=web /src/web/dist ./public
 COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh && mkdir -p /config /media

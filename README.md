@@ -20,7 +20,7 @@ CoastGuarrd keeps an eye on who watches what on your Jellyfin server, and helps 
 - **Secure by default** — encrypted database, two-factor sign-in, lockout after repeated failures, and correct visitor addresses behind Cloudflare tunnels.
 - **Phone friendly** — the whole interface works on desktop and mobile.
 
-> **Status:** early development. Phase 1 (sign-in, setup, connections, folders & recycle bins) and phase 2 (watch tracking, history, users, map, requests and alerts) are done. Cleanup rules, poster banners, the recycle bin and notifications arrive in the next phases.
+> **Status:** all five phases are built — sign-in & setup, watch tracking, cleanup rules with poster banners, the recycle bin, and notifications. Early days: please report anything odd.
 
 ## What it tracks
 
@@ -79,6 +79,19 @@ Before moving a title, CoastGuarrd tells Radarr/Sonarr/Lidarr to stop monitoring
 | `TZ` | — | Your time zone. |
 
 **About the encryption key:** if you let CoastGuarrd generate the key, it's stored next to the database in `/config`. That protects copies of the database file on their own (backups, for example), but anyone with your whole appdata folder has both. For stronger protection set `CG_DB_KEY` yourself and keep it somewhere safe — the database can't be opened without it.
+
+## Cleanup
+
+- **Rules** — build rules from conditions like *days since anyone watched*, *never watched*, *days since added*, *requested but the requester never watched*, *size*, *rating*, *genre*, *tag*, *how full the drive is*, *show has ended* and more. Every rule has a live preview showing exactly what it would flag.
+- **Protections** — titles tagged `keep` (in Radarr/Sonarr/Lidarr or Jellyfin), anyone's favourites, recent requests, recent additions and whole libraries (e.g. Kids) are never flagged. You can also keep any title for 30 days, 90 days or forever.
+- **Leaving Soon** — flagged titles get a *"Marked for removal in X days"* banner on their poster (the original is saved and put back if they're kept or watched) and appear in a Jellyfin collection. Watching a title removes the flag automatically.
+- **Recycle bin** — when a countdown ends, Radarr/Sonarr/Lidarr stop monitoring the title and its folder is **moved** to `.coastguarrd-recycle` on the same drive. Restore puts it back and turns monitoring on again. **Nothing is ever deleted unless you press "Delete forever" or "Empty recycle bin".** Deleting can also remove the title from Radarr/Sonarr and clear it in Seerr so it can be requested again.
+- **Leftover downloads** — old items in your downloads folder are listed and can be moved to the bin.
+- **Preview mode** — on by default: rules flag titles so you can review them, but no posters change and nothing moves.
+
+## Notifications
+
+Discord, email and generic webhooks for alerts, flagged titles, moves, family keep requests and a weekly summary. An optional **family page** (secret link, no sign-in) lists what's leaving with a **Keep it** button, and can be emailed to everyone in Seerr each Sunday.
 
 ## Locations
 

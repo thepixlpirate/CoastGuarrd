@@ -10,6 +10,7 @@ import { audit } from '../lib/audit.js';
 import { clientIp } from '../lib/ip.js';
 import { getSetting, setSetting } from '../lib/settings.js';
 import { checkPaths, isInside, listDirs, suggestLocalPath, suggestRecyclePath } from './paths.js';
+import { evaluateNow } from '../cleanup/engine.js';
 
 interface FolderRow {
   id: number;
@@ -128,6 +129,12 @@ export async function storageRoutes(app: FastifyInstance) {
       .safeParse(req.body);
     if (!body.success) return reply.code(400).send({ error: body.error.issues[0]?.message });
     audit('settings.general', { userId: req.user!.id, ip: clientIp(req), detail: body.data });
-    return setSetting('general', body.data);
+    const before = getSetting('general').previewMode;
+    const next = setSetting('general', body.data);
+    // Turning preview mode on/off: re-check straight away so posters and the collection follow.
+    if (body.data.previewMode !== undefined && body.data.previewMode !== before) {
+      void evaluateNow({ info: (m) => req.log.info(m), warn: (m) => req.log.warn(m), error: (m) => req.log.error(m) }, { sync: false }).catch(() => undefined);
+    }
+    return next;
   });
 }
