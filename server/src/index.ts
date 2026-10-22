@@ -17,6 +17,9 @@ import { trackingRoutes } from './routes/tracking.js';
 import { initGeo } from './geo/index.js';
 import { startPoller } from './tracking/poller.js';
 import { startSync } from './tracking/sync.js';
+import { cleanupRoutes } from './routes/cleanup.js';
+import { startCleanup } from './cleanup/engine.js';
+import { setNotifyLogger } from './notify/index.js';
 
 openDb();
 
@@ -58,7 +61,7 @@ app.addHook('onRequest', async (req, reply) => {
   }
 
   const route = req.url.split('?')[0];
-  if (PUBLIC_API.has(route)) return;
+  if (PUBLIC_API.has(route) || route.startsWith('/api/public/')) return;
   if (!req.user) return reply.code(401).send({ error: 'Please sign in.' });
 });
 
@@ -69,6 +72,14 @@ await app.register(accountRoutes);
 await app.register(serviceRoutes);
 await app.register(storageRoutes);
 await app.register(trackingRoutes);
+
+const bgLog = {
+  info: (m: string) => app.log.info(m),
+  warn: (m: string) => app.log.warn(m),
+  error: (m: unknown) => app.log.error(m),
+};
+setNotifyLogger((m) => app.log.warn(`Notification failed — ${m}`));
+await app.register(cleanupRoutes, { log: bgLog });
 
 app.setErrorHandler((err: Error & { statusCode?: number }, req, reply) => {
   req.log.error(err);
@@ -131,13 +142,9 @@ process.on('SIGINT', shutdown);
 
 await app.listen({ port: config.port, host: config.host });
 
-// ---- Tracking -------------------------------------------------------------
-const bgLog = {
-  info: (m: string) => app.log.info(m),
-  warn: (m: string) => app.log.warn(m),
-  error: (m: unknown) => app.log.error(m),
-};
+// ---- Background work ------------------------------------------------------
 void initGeo((m) => app.log.info(m));
 startPoller(bgLog);
 startSync(bgLog);
+startCleanup(bgLog);
 app.log.info(`CoastGuarrd ${config.version} is up on port ${config.port}`);

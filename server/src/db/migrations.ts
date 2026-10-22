@@ -267,4 +267,125 @@ export const migrations: { version: number; sql: string }[] = [
       );
     `,
   },
+  {
+    version: 3,
+    sql: `
+      ALTER TABLE plays ADD COLUMN artist_name TEXT;
+
+      -- Everything in the library, merged from Jellyfin and Radarr/Sonarr/Lidarr.
+      CREATE TABLE media_items (
+        key            TEXT PRIMARY KEY,         -- jf:<id> or radarr:<id> etc.
+        kind           TEXT NOT NULL,            -- movie | show | music
+        jf_id          TEXT,
+        title          TEXT NOT NULL,
+        sort_title     TEXT,
+        year           INTEGER,
+        library        TEXT,
+        path           TEXT,                     -- as the source app sees it
+        path_service   TEXT,                     -- which app reported the path
+        size_bytes     INTEGER,
+        size_checked_at INTEGER,
+        added_at       INTEGER,
+        tmdb_id        INTEGER,
+        tvdb_id        INTEGER,
+        imdb_id        TEXT,
+        genres         TEXT NOT NULL DEFAULT '[]',
+        tags           TEXT NOT NULL DEFAULT '[]',
+        rating         REAL,
+        official_rating TEXT,
+        ended          INTEGER,
+        arr_service    TEXT,
+        arr_id         INTEGER,
+        arr_monitored  INTEGER,
+        favorite_of    TEXT NOT NULL DEFAULT '[]',
+        seen_at        INTEGER NOT NULL
+      );
+      CREATE INDEX idx_media_jf ON media_items(jf_id);
+      CREATE INDEX idx_media_arr ON media_items(arr_service, arr_id);
+
+      CREATE TABLE cleanup_rules (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        name       TEXT NOT NULL,
+        enabled    INTEGER NOT NULL DEFAULT 1,
+        kind       TEXT NOT NULL,
+        config     TEXT NOT NULL,                -- JSON: libraries, match, conditions, graceDays, reason
+        position   INTEGER NOT NULL DEFAULT 0,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL
+      );
+
+      -- Titles currently marked for removal.
+      CREATE TABLE flags (
+        id            INTEGER PRIMARY KEY AUTOINCREMENT,
+        item_key      TEXT NOT NULL UNIQUE,
+        rule_id       INTEGER,
+        rule_name     TEXT,
+        reason        TEXT,                      -- banner wording, e.g. "due to not being watched"
+        detail        TEXT,                      -- JSON: why it matched
+        flagged_at    INTEGER NOT NULL,
+        delete_at     INTEGER NOT NULL,
+        preview       INTEGER NOT NULL DEFAULT 1,
+        poster_days   INTEGER,                   -- days shown on the current banner
+        in_collection INTEGER NOT NULL DEFAULT 0,
+        notified      INTEGER NOT NULL DEFAULT 0,
+        last_error    TEXT
+      );
+
+      -- Titles that must never be (or not yet be) flagged.
+      CREATE TABLE exclusions (
+        item_key   TEXT PRIMARY KEY,
+        title      TEXT,
+        until      INTEGER,                      -- NULL = forever
+        reason     TEXT,
+        created_at INTEGER NOT NULL
+      );
+
+      CREATE TABLE recycle_bin (
+        id             INTEGER PRIMARY KEY AUTOINCREMENT,
+        item_key       TEXT,
+        jf_id          TEXT,
+        kind           TEXT NOT NULL,
+        title          TEXT NOT NULL,
+        year           INTEGER,
+        original_path  TEXT NOT NULL,            -- inside the container
+        recycle_path   TEXT NOT NULL,
+        size_bytes     INTEGER,
+        moved_at       INTEGER NOT NULL,
+        rule_name      TEXT,
+        arr_service    TEXT,
+        arr_id         INTEGER,
+        was_monitored  INTEGER,
+        tmdb_id        INTEGER,
+        tvdb_id        INTEGER,
+        poster_backup  TEXT,
+        status         TEXT NOT NULL DEFAULT 'in_bin',  -- in_bin | restored | deleted
+        finished_at    INTEGER,
+        note           TEXT
+      );
+      CREATE INDEX idx_bin_status ON recycle_bin(status, moved_at);
+
+      -- "Please keep this" requests from the family page.
+      CREATE TABLE keep_requests (
+        id        INTEGER PRIMARY KEY AUTOINCREMENT,
+        item_key  TEXT NOT NULL,
+        title     TEXT,
+        name      TEXT NOT NULL,
+        message   TEXT,
+        ip        TEXT,
+        at        INTEGER NOT NULL,
+        status    TEXT NOT NULL DEFAULT 'pending'   -- pending | approved | declined
+      );
+
+      -- What happened to each title (flagged, kept, moved, restored, deleted).
+      CREATE TABLE cleanup_log (
+        id       INTEGER PRIMARY KEY AUTOINCREMENT,
+        at       INTEGER NOT NULL,
+        item_key TEXT,
+        title    TEXT,
+        action   TEXT NOT NULL,
+        detail   TEXT
+      );
+      CREATE INDEX idx_cleanup_log_at ON cleanup_log(at);
+    `,
+  },
 ];

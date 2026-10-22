@@ -103,8 +103,8 @@ function startPlay(s: JfSession, key: string, now: number): LiveStream {
         `INSERT INTO plays (session_key, jf_session_id, user_id, user_name, item_id, item_type, item_name, series_id, series_name,
            season_number, episode_number, year, runtime_ms, started_at, last_seen_at, position_ms,
            play_method, transcode_video, transcode_audio, transcode_reasons, video_codec, audio_codec, resolution, bitrate, container,
-           client, client_version, device_name, device_id, ip, is_local, country, country_code, region, city, lat, lon, source)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'live')`,
+           client, client_version, device_name, device_id, ip, is_local, country, country_code, region, city, lat, lon, artist_name, source)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'live')`,
       )
       .run(
         key, s.Id, userId, userName, f.item_id, f.item_type, f.item_name, f.series_id, f.series_name,
@@ -112,6 +112,7 @@ function startPlay(s: JfSession, key: string, now: number): LiveStream {
         f.play_method, f.transcode_video, f.transcode_audio, f.transcode_reasons, f.video_codec, f.audio_codec, f.resolution, f.bitrate, f.container,
         s.Client ?? null, s.ApplicationVersion ?? null, s.DeviceName ?? null, s.DeviceId ?? null, ip || null, geo.isLocal ? 1 : 0,
         geo.country, geo.countryCode, geo.region, geo.city, geo.lat, geo.lon,
+        s.NowPlayingItem!.AlbumArtist ?? s.NowPlayingItem!.Artists?.[0] ?? null,
       ).lastInsertRowid as number;
   }
 

@@ -1,6 +1,7 @@
 import { getDb } from '../db/index.js';
 import { distanceKm, placeLabel, type GeoResult } from '../geo/index.js';
 import { getSetting, type RuleToggle } from '../lib/settings.js';
+import { notifyAlert } from '../notify/index.js';
 
 export type RuleId =
   | 'impossibleTravel'
@@ -48,6 +49,8 @@ function raise(id: RuleId, cfg: RuleToggle, ctx: { userId?: string | null; userN
     `INSERT INTO alerts (at, user_id, user_name, rule, severity, title, detail, dedupe_key, play_id)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(ctx.at, ctx.userId ?? null, ctx.userName ?? null, id, cfg.severity, title, JSON.stringify(detail), key, ctx.playId ?? null);
+  // Only send messages for things happening now, not old log entries.
+  if (Date.now() - ctx.at < 15 * 60_000) notifyAlert({ title, severity: cfg.severity, rule: id, userId: ctx.userId, detail });
 }
 
 interface Located {

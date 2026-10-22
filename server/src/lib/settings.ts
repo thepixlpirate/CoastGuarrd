@@ -53,7 +53,63 @@ export interface TrackingSettings {
   };
 }
 
-const defaults: { security: SecuritySettings; general: GeneralSettings; tracking: TrackingSettings } = {
+export interface CleanupSettings {
+  /** Titles with any of these tags (in Radarr/Sonarr/Lidarr or Jellyfin) are never flagged. */
+  protectTags: string[];
+  /** Never flag anything someone has marked as a favourite. */
+  protectFavorites: boolean;
+  /** Never flag something requested within this many days. */
+  protectRequestedDays: number;
+  /** Never flag something added to the library within this many days. */
+  protectAddedDays: number;
+  /** Libraries that are never touched (e.g. Kids). */
+  excludedLibraries: string[];
+  /** How often rules are checked, in hours. */
+  evaluateHours: number;
+  posters: { enabled: boolean; color: 'red' | 'purple' | 'teal' | 'black' };
+  collection: { enabled: boolean; name: string };
+  arr: { unmonitor: boolean; removeOnDelete: boolean; importExclusion: boolean };
+  /** When a title is deleted for good, clear it in Seerr so it can be requested again. */
+  seerrReset: boolean;
+  /** Allow copying to a recycle bin on a different drive (slow). Off = refuse instead. */
+  allowCrossDrive: boolean;
+  /** Leftover downloads older than this many days are listed. */
+  downloadsAgeDays: number;
+}
+
+export interface NotifySettings {
+  discord: { enabled: boolean; webhook: string };
+  email: { enabled: boolean; host: string; port: number; secure: boolean; user: string; pass: string; from: string; to: string };
+  webhook: { enabled: boolean; url: string };
+  events: { alerts: 'off' | 'info' | 'warning' | 'critical'; flagged: boolean; moved: boolean; keepRequests: boolean; digest: boolean };
+  family: { pageEnabled: boolean; token: string; emailDigest: boolean };
+  /** Address people use to reach CoastGuarrd, for links in messages. */
+  publicUrl: string;
+}
+
+const defaults: { security: SecuritySettings; general: GeneralSettings; tracking: TrackingSettings; cleanup: CleanupSettings; notify: NotifySettings } = {
+  cleanup: {
+    protectTags: ['keep', 'coastguarrd-keep'],
+    protectFavorites: true,
+    protectRequestedDays: 30,
+    protectAddedDays: 30,
+    excludedLibraries: [],
+    evaluateHours: 6,
+    posters: { enabled: true, color: 'red' },
+    collection: { enabled: true, name: 'Leaving Soon' },
+    arr: { unmonitor: true, removeOnDelete: true, importExclusion: false },
+    seerrReset: true,
+    allowCrossDrive: false,
+    downloadsAgeDays: 14,
+  },
+  notify: {
+    discord: { enabled: false, webhook: '' },
+    email: { enabled: false, host: '', port: 587, secure: false, user: '', pass: '', from: '', to: '' },
+    webhook: { enabled: false, url: '' },
+    events: { alerts: 'warning', flagged: true, moved: true, keepRequests: true, digest: true },
+    family: { pageEnabled: false, token: '', emailDigest: false },
+    publicUrl: '',
+  },
   tracking: {
     pollSeconds: 10,
     geoEnabled: true,
