@@ -25,6 +25,30 @@ export function importStatus(): ImportStatus {
   return current.running ? current : getState<ImportStatus>('import:last', current);
 }
 
+/**
+ * Plays CoastGuarrd tracked live are already in the table, and Jellyfin's own
+ * records include those same plays. An imported play counts as a duplicate when
+ * the same person watched the same item at about the same time.
+ */
+const SLACK_MS = 15 * 60_000;
+
+/** Removes imported plays that overlap a live-tracked play of the same title. Returns how many. */
+function removeDuplicates(): number {
+  const out = getDb()
+    .prepare(
+      `DELETE FROM plays
+       WHERE source != 'live'
+         AND EXISTS (
+           SELECT 1 FROM plays l
+           WHERE l.source = 'live' AND l.user_id = plays.user_id AND l.item_id = plays.item_id
+             AND l.started_at <= plays.last_seen_at + ?
+             AND COALESCE(l.stopped_at, l.last_seen_at) >= plays.started_at - ?
+         )`,
+    )
+    .run(SLACK_MS, SLACK_MS);
+  return out.changes;
+}
+
 /** Playback Reporting stores local time without a zone, e.g. "2024-03-01 20:15:02.1234567". */
 function parseLocal(s: string): number {
   const m = s.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})/);
@@ -51,6 +75,10 @@ async function viaPlugin(): Promise<boolean> {
        started_at, last_seen_at, stopped_at, watched_ms, play_method, client, device_name, source, completed)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'import-plugin', 0)`,
   );
+  const hasLive = db.prepare(
+    `SELECT 1 FROM plays WHERE source = 'live' AND user_id = ? AND item_id = ?
+       AND started_at <= ? AND COALESCE(stopped_at, last_seen_at) >= ? LIMIT 1`,
+  );
   const tx = db.transaction((rows: unknown[][]) => {
     for (const r of rows) {
       const [date, userId, itemId, itemType, itemName, method, client, device, duration] = r as string[];
@@ -61,6 +89,10 @@ async function viaPlugin(): Promise<boolean> {
       }
       const started = parseLocal(String(date));
       const secs = Number(duration) || 0;
+      if (hasLive.get(uid, String(itemId).replace(/-/g, ''), started + secs * 1000 + SLACK_MS, started - SLACK_MS)) {
+        current.skipped++; // CoastGuarrd already recorded this play live
+        continue;
+      }
       const ep = itemType === 'Episode' ? splitEpisodeName(String(itemName)) : null;
       const out = insert.run(
         uid,
@@ -96,6 +128,10 @@ async function viaPlayedItems() {
        year, runtime_ms, started_at, last_seen_at, stopped_at, watched_ms, position_ms, source, completed)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'import-played', 1)`,
   );
+  const hasLive = db.prepare(
+    `SELECT 1 FROM plays WHERE source = 'live' AND user_id = ? AND item_id = ?
+       AND started_at <= ? AND COALESCE(stopped_at, last_seen_at) >= ? LIMIT 1`,
+  );
   for (const u of users) {
     current.message = `Reading ${u.name}'s watched items…`;
     for (let start = 0; ; start += 500) {
@@ -110,6 +146,10 @@ async function viaPlayedItems() {
           }
           const runtime = it.RunTimeTicks ? Math.round(it.RunTimeTicks / TICKS_PER_MS) : 0;
           const startAt = last - runtime;
+          if (hasLive.get(u.id, it.Id, last + SLACK_MS, startAt - SLACK_MS)) {
+            current.skipped++; // CoastGuarrd already recorded this play live
+            continue;
+          }
           const out = insert.run(
             u.id, u.name, it.Id, it.Type, it.Name, it.SeriesId ?? it.AlbumId ?? null, it.SeriesName ?? it.Album ?? null,
             it.ParentIndexNumber ?? null, it.IndexNumber ?? null, it.ProductionYear ?? null, runtime || null,
@@ -130,12 +170,15 @@ export function startImport(log: { error: (m: unknown) => void }): boolean {
   current = { running: true, method: null, imported: 0, skipped: 0, message: 'Checking for the Playback Reporting plugin…', finishedAt: null };
   void (async () => {
     try {
+      // Clean up duplicates left by earlier imports before bringing in anything new.
+      const removed = removeDuplicates();
       const usedPlugin = await viaPlugin();
       if (!usedPlugin) await viaPlayedItems();
       current.message =
         current.method === 'plugin'
           ? `Imported ${current.imported.toLocaleString()} plays from the Playback Reporting plugin.`
           : `Imported ${current.imported.toLocaleString()} watched items (last-watched dates only — install Jellyfin's Playback Reporting plugin for full history).`;
+      if (removed > 0) current.message += ` Removed ${removed.toLocaleString()} duplicate${removed === 1 ? '' : 's'} of plays CoastGuarrd had already tracked.`;
     } catch (err) {
       log.error(err);
       current.message = `Import stopped: ${(err as Error).message}`;
