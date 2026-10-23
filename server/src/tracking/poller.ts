@@ -3,6 +3,7 @@ import { jellyfinReady, jfApi, TICKS_PER_MS, type JfSession } from '../jellyfin/
 import { getSetting } from '../lib/settings.js';
 import { endpointIp, recordDevice, recordIp, deviceCount } from './presence.js';
 import { onNewDevice, onNewIp, onPlayStart } from './rules.js';
+import { mergeSameDayPlays } from './import.js';
 import type { GeoResult } from '../geo/index.js';
 
 /**
@@ -181,6 +182,8 @@ function closePlay(st: LiveStream) {
   }
   const completed = row.runtime_ms ? (row.position_ms >= row.runtime_ms * 0.9 ? 1 : 0) : 0;
   db.prepare('UPDATE plays SET stopped_at = ?, completed = ? WHERE id = ?').run(row.last_seen_at, completed, st.playId);
+  // Pausing and resuming shouldn't leave several entries: fold today's plays of this title into one.
+  mergeSameDayPlays({ userId: st.userId, itemId: st.session.NowPlayingItem?.Id ?? '' });
 }
 
 /** Closes plays left open from before a restart that never came back. */
@@ -257,6 +260,11 @@ async function tick() {
 export function startPoller(logger: typeof log) {
   log = logger;
   closeOrphans(Date.now());
+  try {
+    mergeSameDayPlays();
+  } catch (err) {
+    log.error(err);
+  }
   const schedule = () => {
     const secs = Math.max(3, Math.min(120, getSetting('tracking').pollSeconds));
     timer = setTimeout(async () => {
